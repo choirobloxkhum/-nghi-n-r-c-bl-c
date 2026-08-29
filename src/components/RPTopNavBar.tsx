@@ -133,7 +133,8 @@ export const RPTopNavBar: React.FC<RPTopNavBarProps> = ({
 
         {/* Right Section: NSFW Toggle Button (Normal Mode) & Fullscreen Action */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Distinct NSFW / Hell Mode Toggle Button (only shown in Normal mode) */}
+          {/* 
+          // HIDDEN FOR GITHUB PUBLISH (HELL MODE NOT READY)
           {!isHellMode && (
             <button
               onClick={() => {
@@ -149,7 +150,8 @@ export const RPTopNavBar: React.FC<RPTopNavBarProps> = ({
                 NSFW
               </span>
             </button>
-          )}
+          )} 
+          */}
 
           {/* Fullscreen Button */}
           <button
