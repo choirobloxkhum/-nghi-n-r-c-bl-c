@@ -1,0 +1,6 @@
+{
+  "name": "Roblox Game Welcome Screen",
+  "description": "An interactive Roblox welcome interface and 'Ổ Nghiện Roblox' RP character hub with high-resolution layout, Robux leaderboards, character cards, interactive roleplay dialogs, custom audio synthesizer, and jumpscare effects.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

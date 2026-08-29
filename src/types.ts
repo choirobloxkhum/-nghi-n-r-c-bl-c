@@ -1,0 +1,27 @@
+export interface RPCharacter {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  roleTag: string; // e.g. "Tổng Tài Lạnh Lùng", "Ma Vương Bóng Tối", "Trùm Trường Roblox", "Học Bá Siêu Giàu"
+  tags: string[];
+  tagline: string;
+  robuxDonations: number;
+  gender?: string;
+  age?: string;
+  personality: string;
+  plotTitle: string;
+  plotSummary: string;
+  fullPlot: string;
+  sampleDialogue: string[];
+  gamePlaceUrl?: string;
+  playUrl?: string;
+  plotUrl?: string;
+  voiceUrl?: string;
+  createdAt: number;
+  isNew?: boolean;
+  cornerTag?: string;
+}
+
+export interface PlayScenarioModalData {
+  character: RPCharacter;
+}
