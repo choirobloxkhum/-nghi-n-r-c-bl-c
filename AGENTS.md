@@ -5,7 +5,8 @@
 - Đặt `createdAt: Date.now()` (hoặc timestamp lớn nhất) cho nhân vật mới.
 
 ## 2. Nhãn Tag Mới (Top-Right Badge)
-- Luôn gắn thuộc tính `isNew: true` và `cornerTag: 'MỚI'` (hoặc tag tùy chỉnh) cho nhân vật mới thêm.
+- Luôn gắn thuộc tính `isNew: true` và `cornerTag: 'MỚI'` (hoặc tag tùy chỉnh) cho TỐI ĐA 3 nhân vật gần đây nhất.
+- Khi thêm nhân vật mới, NẾU danh sách đã có 3 nhân vật có tag MỚI, bạn PHẢI xóa thuộc tính `isNew` và `cornerTag` ở nhân vật cũ hơn (đứng thứ 4 trở đi) để đảm bảo CHỈ CÓ TỐI ĐA 3 nhân vật mang tag này.
 - Thẻ nhân vật sẽ tự động hiển thị nhãn nổi bật (`MỚI`) ở góc phải trên cùng của khung ảnh đại diện.
 
 ## 3. Quy tắc Thả Robux Ẩn Danh (Anonymous Single-Vote & Browser Fingerprinting)

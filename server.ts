@@ -3,204 +3,154 @@ import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, collection, getDocs } from 'firebase/firestore';
+
+const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+let firebaseConfig;
+try {
+  firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+} catch(e) {
+  console.error("Firebase config missing!", e);
+}
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+
 const app = express();
 const PORT = 3000;
-
 app.use(express.json());
-
-// Path to persistent JSON database file
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'robux_votes_db.json');
-
-// Initial default character IDs with 0 Robux counts
-const INITIAL_CHARACTER_IDS = [
-  'char-10-belphegor',
-  'char-1-yuuma',
-  'char-2-thetri',
-  'char-3-taloi',
-  'char-4-rex',
-  'char-5-ducson',
-  'char-6-kenji',
-  'char-7-james',
-  'char-8-votran',
-  'char-9-nolan',
-];
-
-interface DatabaseSchema {
-  counts: Record<string, number>;
-  votesByDevice: Record<string, string[]>; // fingerprint -> array of characterIds voted
-  voteLogs: Array<{ characterId: string; fingerprint: string; timestamp: number; ip?: string }>;
-  lastUpdated: number;
-}
-
-// In-memory state cached from database file
-let db: DatabaseSchema = {
-  counts: {},
-  votesByDevice: {},
-  voteLogs: [],
-  lastUpdated: Date.now(),
-};
-
-// Initialize counts to 0 for all characters
-INITIAL_CHARACTER_IDS.forEach((id) => {
-  db.counts[id] = 0;
-});
-
-// Load persistent database from disk on startup
-function loadDatabase() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') {
-        db.counts = parsed.counts || {};
-        db.votesByDevice = parsed.votesByDevice || {};
-        db.voteLogs = parsed.voteLogs || [];
-        db.lastUpdated = parsed.lastUpdated || Date.now();
-      }
-    } else {
-      saveDatabase();
-    }
-
-    // Ensure all characters have a registered key
-    INITIAL_CHARACTER_IDS.forEach((id) => {
-      if (typeof db.counts[id] !== 'number') {
-        db.counts[id] = 0;
-      }
-    });
-  } catch (err) {
-    console.error('[Database] Failed to load db file, initializing with fresh zero state:', err);
-    saveDatabase();
-  }
-}
-
-// Save database to disk
-function saveDatabase() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    db.lastUpdated = Date.now();
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('[Database] Failed to persist database:', err);
-  }
-}
-
-// Load DB immediately
-loadDatabase();
 
 // ==========================================
 // CENTRALIZED DATABASE API ROUTES
 // ==========================================
 
 // 1. GET /api/robux - Get all character total Robux counts
-app.get('/api/robux', (req, res) => {
-  res.json({
-    success: true,
-    counts: db.counts,
-    totalVotes: db.voteLogs.length,
-    lastUpdated: db.lastUpdated,
-  });
+app.get('/api/robux', async (req, res) => {
+  try {
+    const counts: Record<string, number> = {};
+    const snapshot = await getDocs(collection(db, 'robux_counts'));
+    snapshot.forEach((doc) => {
+      counts[doc.id] = doc.data().count || 0;
+    });
+    res.json({
+      success: true,
+      counts,
+      totalVotes: 0,
+      lastUpdated: Date.now(),
+    });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
 });
 
 // 2. GET /api/robux/device/:fingerprint - Get list of character IDs voted by this device
-app.get('/api/robux/device/:fingerprint', (req, res) => {
-  const { fingerprint } = req.params;
-  if (!fingerprint) {
-    return res.status(400).json({ success: false, message: 'Missing fingerprint' });
+app.get('/api/robux/device/:fingerprint', async (req, res) => {
+  try {
+    const { fingerprint } = req.params;
+    if (!fingerprint) {
+      return res.status(400).json({ success: false, message: 'Missing fingerprint' });
+    }
+    const dRef = doc(db, 'device_votes', fingerprint);
+    const snap = await getDoc(dRef);
+    const votedCharacters = snap.exists() ? (snap.data().votedCharacters || []) : [];
+    res.json({
+      success: true,
+      fingerprint,
+      votedCharacters,
+    });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: String(err) });
   }
-
-  const votedCharacters = db.votesByDevice[fingerprint] || [];
-  res.json({
-    success: true,
-    fingerprint,
-    votedCharacters,
-  });
 });
 
 // 3. POST /api/robux/vote - Upvote +1 Robux with anonymous device fingerprinting
-app.post('/api/robux/vote', (req, res) => {
-  const { characterId, fingerprint } = req.body;
+app.post('/api/robux/vote', async (req, res) => {
+  try {
+    const { characterId, fingerprint } = req.body;
+    if (!characterId || typeof characterId !== 'string') {
+      return res.status(400).json({ success: false, message: 'characterId is required' });
+    }
+    if (!fingerprint || typeof fingerprint !== 'string') {
+      return res.status(400).json({ success: false, message: 'Device fingerprint is required' });
+    }
 
-  if (!characterId || typeof characterId !== 'string') {
-    return res.status(400).json({ success: false, message: 'characterId is required' });
-  }
+    // Ensure character document exists
+    const charRef = doc(db, 'robux_counts', characterId);
+    let charSnap = await getDoc(charRef);
+    if (!charSnap.exists()) {
+      await setDoc(charRef, { count: 0 });
+    }
 
-  if (!fingerprint || typeof fingerprint !== 'string') {
-    return res.status(400).json({ success: false, message: 'Device fingerprint is required' });
-  }
+    const deviceRef = doc(db, 'device_votes', fingerprint);
+    const deviceSnap = await getDoc(deviceRef);
+    
+    let deviceVotes: string[] = [];
+    if (deviceSnap.exists()) {
+      deviceVotes = deviceSnap.data().votedCharacters || [];
+    }
 
-  // Ensure device record exists
-  if (!db.votesByDevice[fingerprint]) {
-    db.votesByDevice[fingerprint] = [];
-  }
+    // ENFORCE SINGLE-VOTE RULE: Check if device has already voted for this character
+    if (deviceVotes.includes(characterId)) {
+      charSnap = await getDoc(charRef);
+      return res.status(200).json({
+        success: false,
+        alreadyVoted: true,
+        error: 'ALREADY_VOTED',
+        message: 'Thiết bị này đã thả 1 Robux cho nhân vật này rồi! (Tối đa 1 R$/nhân vật)',
+        characterId,
+        totalRobux: charSnap.data()?.count || 0,
+        votedCharacters: deviceVotes,
+      });
+    }
 
-  const deviceVotes = db.votesByDevice[fingerprint];
-
-  // ENFORCE SINGLE-VOTE RULE: Check if device has already voted for this character
-  if (deviceVotes.includes(characterId)) {
-    return res.status(200).json({
-      success: false,
-      alreadyVoted: true,
-      error: 'ALREADY_VOTED',
-      message: 'Thiết bị này đã thả 1 Robux cho nhân vật này rồi! (Tối đa 1 R$/nhân vật)',
+    // Process vote
+    deviceVotes.push(characterId);
+    await setDoc(deviceRef, { votedCharacters: deviceVotes });
+    await updateDoc(charRef, { count: increment(1) });
+    
+    charSnap = await getDoc(charRef);
+    
+    console.log(`[Vote Success] Device "${fingerprint}" voted for "${characterId}". New total: ${charSnap.data()?.count} R$`);
+    res.json({
+      success: true,
+      alreadyVoted: false,
       characterId,
-      totalRobux: db.counts[characterId] || 0,
+      totalRobux: charSnap.data()?.count || 1,
       votedCharacters: deviceVotes,
+      message: 'Thả 1 Robux thành công (+1 R$)!',
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: String(err) });
   }
-
-  // Record the vote
-  deviceVotes.push(characterId);
-  db.counts[characterId] = (db.counts[characterId] || 0) + 1;
-
-  // Log vote with timestamp
-  db.voteLogs.push({
-    characterId,
-    fingerprint,
-    timestamp: Date.now(),
-    ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '',
-  });
-
-  // Save to persistent database
-  saveDatabase();
-
-  console.log(`[Vote Success] Device "${fingerprint}" voted for "${characterId}". New total: ${db.counts[characterId]} R$`);
-
-  res.json({
-    success: true,
-    alreadyVoted: false,
-    characterId,
-    totalRobux: db.counts[characterId],
-    votedCharacters: deviceVotes,
-    message: 'Thả 1 Robux thành công (+1 R$)!',
-  });
 });
 
 // 4. POST /api/robux/reset - Reset all characters to 0 Robux and clear device vote history
-app.post('/api/robux/reset', (req, res) => {
-  INITIAL_CHARACTER_IDS.forEach((id) => {
-    db.counts[id] = 0;
-  });
-  db.votesByDevice = {};
-  db.voteLogs = [];
-  saveDatabase();
-
-  res.json({
-    success: true,
-    message: 'Đã reset tất cả nhân vật về 0 Robux thành công!',
-    counts: db.counts,
-  });
+app.post('/api/robux/reset', async (req, res) => {
+  try {
+    const snapshot = await getDocs(collection(db, 'robux_counts'));
+    for (const d of snapshot.docs) {
+      await updateDoc(doc(db, 'robux_counts', d.id), { count: 0 });
+    }
+    const deviceSnapshot = await getDocs(collection(db, 'device_votes'));
+    for (const d of deviceSnapshot.docs) {
+      await setDoc(doc(db, 'device_votes', d.id), { votedCharacters: [] });
+    }
+    
+    res.json({ success: true, message: 'Đã reset tất cả nhân vật về 0 Robux thành công!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
 });
 
 // ==========================================
 // VITE / STATIC SERVING SETUP
 // ==========================================
+
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

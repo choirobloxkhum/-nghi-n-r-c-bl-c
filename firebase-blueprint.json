@@ -1,0 +1,22 @@
+{
+  "entities": {
+    "RobuxCount": {
+      "title": "RobuxCount",
+      "description": "Store the robux vote counts for a character",
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "number",
+          "description": "Total robux"
+        }
+      },
+      "required": ["count"]
+    }
+  },
+  "firestore": {
+    "/robux_counts/{characterId}": {
+      "schema": "RobuxCount",
+      "description": "Robux counts for characters"
+    }
+  }
+}

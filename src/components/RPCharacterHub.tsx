@@ -16,6 +16,7 @@ import { ActiveVoiceBanner } from './ActiveVoiceBanner';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { NgocHoangCloudModal } from './NgocHoangCloudModal';
 import { RapunzelTributeFooter } from './RapunzelTributeFooter';
+import { PasswordModal } from './PasswordModal';
 import {
   getStoredRPCharacters,
   saveStoredRPCharacters,
@@ -59,6 +60,27 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
   const [isHellMode, setIsHellMode] = useState<boolean>(false);
   const [isAgeVerificationOpen, setIsAgeVerificationOpen] = useState(false);
   const [isFallingOverlayActive, setIsFallingOverlayActive] = useState(false);
+
+  // Password Modal states
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [selectedPasswordChar, setSelectedPasswordChar] = useState<RPCharacter | null>(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(window.innerWidth >= 640 ? 20 : 10);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth >= 640 ? 20 : 10);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Reset page to 1 when filters or mode changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeCategory, isHellMode]);
 
   // Sync data from centralized database
   const syncServerData = useCallback(async () => {
@@ -218,6 +240,14 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
     });
   }, [activeModeCharacters, searchQuery, activeCategory]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCharacters.length / itemsPerPage);
+  
+  const paginatedCharacters = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCharacters.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredCharacters, currentPage, itemsPerPage]);
+
   // Quick Open Plot
   const handleReadPlot = (char: RPCharacter) => {
     playUiClick(soundEnabled);
@@ -229,6 +259,12 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
   // Quick Open Play
   const handlePlay = (char: RPCharacter) => {
     playUiClick(soundEnabled);
+    if (char.password) {
+      setSelectedPasswordChar(char);
+      setIsPasswordModalOpen(true);
+      return;
+    }
+
     if (char.playUrl) {
       window.open(char.playUrl, '_blank');
     }
@@ -474,27 +510,71 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
           </div>
 
           {/* Character Cards Grid: EXACTLY 2 COLUMNS ON MOBILE (grid-cols-2) with smooth mode transition */}
-          {filteredCharacters.length > 0 ? (
-            <motion.div
-              key={isHellMode ? 'hell-mode-active' : 'earth-mode-active'}
-              initial={{ opacity: 0.75, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6"
-            >
-              {filteredCharacters.map((character) => (
-                <RPCharacterCard
-                  key={character.id}
-                  character={character}
-                  hasVoted={votedIds.includes(character.id)}
-                  onPlay={handlePlay}
-                  onReadPlot={handleReadPlot}
-                  onDonateRobux={handleDonateRobux}
-                  rankBadge={rankMap.get(character.id)}
-                  isHellMode={isHellMode}
-                />
-              ))}
-            </motion.div>
+          {paginatedCharacters.length > 0 ? (
+            <>
+              <motion.div
+                key={isHellMode ? 'hell-mode-active' : 'earth-mode-active'}
+                initial={{ opacity: 0.75, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6"
+              >
+                {paginatedCharacters.map((character) => (
+                  <RPCharacterCard
+                    key={character.id}
+                    character={character}
+                    hasVoted={votedIds.includes(character.id)}
+                    onPlay={handlePlay}
+                    onReadPlot={handleReadPlot}
+                    onDonateRobux={handleDonateRobux}
+                    rankBadge={rankMap.get(character.id)}
+                    isHellMode={isHellMode}
+                  />
+                ))}
+              </motion.div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-3 sm:gap-4 mt-8 sm:mt-10 mb-6">
+                  <button
+                    onClick={() => {
+                      setCurrentPage(p => Math.max(1, p - 1));
+                      window.scrollTo({ top: 300, behavior: 'smooth' });
+                    }}
+                    disabled={currentPage === 1}
+                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all ${
+                      currentPage === 1 
+                        ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400' 
+                        : isHellMode 
+                          ? 'bg-red-900/40 text-red-100 hover:bg-red-800/60 border border-red-800/50' 
+                          : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200 shadow-sm active:scale-95'
+                    }`}
+                  >
+                    Trang trước
+                  </button>
+                  <div className={`font-black text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl ${
+                    isHellMode ? 'bg-black/50 text-red-200 border border-red-900/50' : 'bg-stone-100/80 text-stone-800 border border-stone-200/50'
+                  }`}>
+                    {currentPage} / {totalPages}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentPage(p => Math.min(totalPages, p + 1));
+                      window.scrollTo({ top: 300, behavior: 'smooth' });
+                    }}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all ${
+                      currentPage === totalPages 
+                        ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400' 
+                        : isHellMode 
+                          ? 'bg-red-900/40 text-red-100 hover:bg-red-800/60 border border-red-800/50' 
+                          : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200 shadow-sm active:scale-95'
+                    }`}
+                  >
+                    Trang sau
+                  </button>
+                </div>
+              )}
+            </>
           ) : activeCategory === 'vnxua' && !searchQuery ? (
             <div
               className={`w-full py-8 sm:py-14 px-4 sm:px-6 flex flex-col items-center justify-center text-center backdrop-blur-md rounded-2xl sm:rounded-3xl border sm:border-2 shadow-md ${
@@ -619,6 +699,14 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
         onSelectCharacter={handleSelectFromGacha}
         onPlay={handlePlay}
         onReadPlot={handleReadPlot}
+      />
+
+      <PasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        character={selectedPasswordChar}
+        soundEnabled={soundEnabled}
+        isHellMode={isHellMode}
       />
 
       {/* Floating Cloud Announcement Modal (Ngọc Hoàng in Normal Mode / Cursed Letter in Hell Mode) */}

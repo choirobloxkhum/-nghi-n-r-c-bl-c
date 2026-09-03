@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /robux_counts/{characterId} {
+      allow read: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count']) &&
+                       (request.resource.data.count == resource.data.count + 1 || request.resource.data.count == 0);
+      allow create: if request.resource.data.keys().hasAll(['count']) && 
+                       (request.resource.data.count == 1 || request.resource.data.count == 0);
+    }
+    match /device_votes/{fingerprint} {
+      allow read, write: if true;
+    }
+  }
+}

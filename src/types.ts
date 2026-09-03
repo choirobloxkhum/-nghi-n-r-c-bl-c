@@ -20,6 +20,8 @@ export interface RPCharacter {
   createdAt: number;
   isNew?: boolean;
   cornerTag?: string;
+  password?: string;
+  passwordHint?: string;
 }
 
 export interface PlayScenarioModalData {
