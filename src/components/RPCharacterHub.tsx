@@ -52,7 +52,7 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
     getLocalVotedCharactersList(getStoredRPCharacters().map((c) => c.id))
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<'all' | 'hiendai' | 'hocduong' | 'cotrang' | 'vnxua' | 'nguoc' | 'khac'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'hiendai' | 'hocduong' | 'cotrang' | 'vnxua' | 'nguoc' | 'khac' | 'f7'>('all');
   const [isGachaOpen, setIsGachaOpen] = useState(false);
   const [isNgocHoangModalOpen, setIsNgocHoangModalOpen] = useState(false);
 
@@ -235,6 +235,7 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
       if (activeCategory === 'vnxua') return char.tags?.some((t) => t.toLowerCase() === 'vn xưa');
       if (activeCategory === 'nguoc') return char.tags?.some((t) => t.toLowerCase() === 'ngược');
       if (activeCategory === 'khac') return char.tags?.some((t) => t.toLowerCase() === 'khác');
+      if (activeCategory === 'f7') return char.tags?.some((t) => t.toLowerCase() === 'f7 big wrongs');
 
       return true;
     });
@@ -489,6 +490,7 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
                 { key: 'vnxua', label: 'VN xưa' },
                 { key: 'nguoc', label: 'Ngược' },
                 { key: 'khac', label: 'Khác' },
+                { key: 'f7', label: 'F7 Big Wrongs' },
               ].map((cat) => (
                 <button
                   key={cat.key}
