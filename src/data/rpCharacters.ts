@@ -8,7 +8,7 @@ export const INITIAL_RP_CHARACTERS: RPCharacter[] = [
   {
     id: 'char-11-lucifer',
     name: 'Lucifer',
-    avatarUrl: 'https://i.ibb.co/xSKst4kg/50bcac3b84b8e7fd4681972671f6ccd2.jpg',
+    avatarUrl: 'https://i.ibb.co/SwLw6RXR/media-1788514839.png',
     roleTag: 'Khác',
     tags: ['Khác', 'ma vương', 'hài', 'chim bé', 'user là incubus/succubus', 'F7 Big Wrongs'],
     tagline: '',
@@ -30,7 +30,7 @@ export const INITIAL_RP_CHARACTERS: RPCharacter[] = [
   {
     id: 'char-12-jaxon',
     name: 'Jaxon Petrov',
-    avatarUrl: 'https://i.ibb.co/qL72v9cD/eb0e3889dff4bcc6b31e15ae1ba5e660.jpg',
+    avatarUrl: 'https://i.ibb.co/TDw1NC5s/media-1788512571.png',
     roleTag: 'Hiện đại',
     tags: ['Hiện đại', 'fckboy', 'f1', 'slowburn', 'hài'],
     tagline: '',
@@ -50,7 +50,7 @@ export const INITIAL_RP_CHARACTERS: RPCharacter[] = [
   {
     id: 'char-13-asmodeus',
     name: 'Asmodeus',
-    avatarUrl: 'https://i.ibb.co/YFf9Rdz6/0385ebd2a15f841cc84ea93ab4cf01d2.jpg',
+    avatarUrl: 'https://i.ibb.co/hJrFztd0/media-1788514551.png',
     roleTag: 'Khác',
     tags: ['Khác', 'ma vương', 'hài', 'user bán s** toy', 'máu M?', 'F7 Big Wrongs'],
     tagline: '',

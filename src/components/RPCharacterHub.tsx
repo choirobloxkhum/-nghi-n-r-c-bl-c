@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Sparkles, Users, Search, X, Flame, SunMedium, ArrowUp } from 'lucide-react';
+import { Sparkles, Users, Search, X, Flame, SunMedium, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RPCharacter } from '../types';
 import { RPTopNavBar } from './RPTopNavBar';
@@ -536,43 +536,83 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
               </motion.div>
 
               {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-3 sm:gap-4 mt-8 sm:mt-10 mb-6">
+                <div className="flex justify-center items-center gap-2 sm:gap-3 mt-8 sm:mt-10 mb-6">
+                  {/* Stylized Previous Page Button */}
                   <button
+                    id="btn-pagination-prev"
                     onClick={() => {
+                      playUiClick(soundEnabled);
                       setCurrentPage(p => Math.max(1, p - 1));
                       window.scrollTo({ top: 300, behavior: 'smooth' });
                     }}
                     disabled={currentPage === 1}
-                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all ${
+                    aria-label="Trang trước"
+                    title="Trang trước"
+                    className={`group relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-200 select-none ${
                       currentPage === 1 
-                        ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400' 
+                        ? 'opacity-30 cursor-not-allowed bg-slate-200/50 text-slate-400 border border-slate-200/40' 
                         : isHellMode 
-                          ? 'bg-red-900/40 text-red-100 hover:bg-red-800/60 border border-red-800/50' 
-                          : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200 shadow-sm active:scale-95'
+                          ? 'bg-gradient-to-b from-red-950/90 to-black text-red-300 hover:text-white border-2 border-red-800/80 shadow-[0_0_16px_rgba(220,38,38,0.4)] hover:shadow-[0_0_24px_rgba(220,38,38,0.7)] hover:border-red-600 active:scale-90 cursor-pointer' 
+                          : 'bg-gradient-to-b from-white via-white to-sky-50 text-slate-700 hover:text-sky-600 border-2 border-sky-100 shadow-[0_4px_16px_rgba(14,165,233,0.14)] hover:shadow-[0_6px_22px_rgba(14,165,233,0.25)] hover:border-sky-300 active:scale-90 cursor-pointer'
                     }`}
                   >
-                    Trang trước
+                    <ChevronsLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] transition-transform duration-200 group-hover:-translate-x-0.5" />
                   </button>
-                  <div className={`font-black text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl ${
-                    isHellMode ? 'bg-black/50 text-red-200 border border-red-900/50' : 'bg-stone-100/80 text-stone-800 border border-stone-200/50'
+
+                  {/* Stylized Page Indicator / Pill Selector */}
+                  <div className={`flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-2xl border-2 backdrop-blur-md shadow-xs ${
+                    isHellMode 
+                      ? 'bg-black/70 border-red-900/70 text-red-200' 
+                      : 'bg-white/90 border-sky-100/90 text-slate-700'
                   }`}>
-                    {currentPage} / {totalPages}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                      const isActive = pageNum === currentPage;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => {
+                            if (pageNum !== currentPage) {
+                              playUiClick(soundEnabled);
+                              setCurrentPage(pageNum);
+                              window.scrollTo({ top: 300, behavior: 'smooth' });
+                            }
+                          }}
+                          className={`min-w-[34px] sm:min-w-[38px] h-9 sm:h-10 px-2 sm:px-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                            isActive
+                              ? isHellMode
+                                ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-[0_0_14px_rgba(220,38,38,0.7)] border border-red-300/40 scale-105'
+                                : 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/35 border border-sky-200/50 scale-105'
+                              : isHellMode
+                                ? 'text-red-400/70 hover:text-red-200 hover:bg-red-950/50'
+                                : 'text-slate-500 hover:text-sky-600 hover:bg-sky-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {/* Stylized Next Page Button */}
                   <button
+                    id="btn-pagination-next"
                     onClick={() => {
+                      playUiClick(soundEnabled);
                       setCurrentPage(p => Math.min(totalPages, p + 1));
                       window.scrollTo({ top: 300, behavior: 'smooth' });
                     }}
                     disabled={currentPage === totalPages}
-                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all ${
+                    aria-label="Trang sau"
+                    title="Trang sau"
+                    className={`group relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-200 select-none ${
                       currentPage === totalPages 
-                        ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400' 
+                        ? 'opacity-30 cursor-not-allowed bg-slate-200/50 text-slate-400 border border-slate-200/40' 
                         : isHellMode 
-                          ? 'bg-red-900/40 text-red-100 hover:bg-red-800/60 border border-red-800/50' 
-                          : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200 shadow-sm active:scale-95'
+                          ? 'bg-gradient-to-b from-red-950/90 to-black text-red-300 hover:text-white border-2 border-red-800/80 shadow-[0_0_16px_rgba(220,38,38,0.4)] hover:shadow-[0_0_24px_rgba(220,38,38,0.7)] hover:border-red-600 active:scale-90 cursor-pointer' 
+                          : 'bg-gradient-to-b from-white via-white to-sky-50 text-slate-700 hover:text-sky-600 border-2 border-sky-100 shadow-[0_4px_16px_rgba(145,213,255,0.2)] hover:shadow-[0_6px_22px_rgba(14,165,233,0.25)] hover:border-sky-300 active:scale-90 cursor-pointer'
                     }`}
                   >
-                    Trang sau
+                    <ChevronsRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
                   </button>
                 </div>
               )}
