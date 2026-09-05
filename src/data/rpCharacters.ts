@@ -46,6 +46,9 @@ export const INITIAL_RP_CHARACTERS: RPCharacter[] = [
     cornerTag: 'MỚI',
     password: 'cuccut',
     passwordHint: 'gọi tui là cục cưng, bạn tệ bạc gọi là...?',
+    hint1: 'Facebook của Ngọc Hoàng',
+    hint1Url: 'https://www.facebook.com/profile.php?id=61590620211736',
+    hint2: 'Bio mô tả của Ngọc Hoàng',
   },
   {
     id: 'char-12-jaxon',

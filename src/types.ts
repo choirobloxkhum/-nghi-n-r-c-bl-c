@@ -22,6 +22,10 @@ export interface RPCharacter {
   cornerTag?: string;
   password?: string;
   passwordHint?: string;
+  hint1?: string;
+  hint1Url?: string;
+  hint2?: string;
+  hint2Url?: string;
 }
 
 export interface PlayScenarioModalData {

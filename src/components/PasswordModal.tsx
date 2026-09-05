@@ -10,6 +10,7 @@ interface PasswordModalProps {
   character: RPCharacter | null;
   soundEnabled: boolean;
   isHellMode?: boolean;
+  onOpenCocKienTroi?: (char: RPCharacter) => void;
 }
 
 export const PasswordModal: React.FC<PasswordModalProps> = ({
@@ -18,6 +19,7 @@ export const PasswordModal: React.FC<PasswordModalProps> = ({
   character,
   soundEnabled,
   isHellMode = false,
+  onOpenCocKienTroi,
 }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [error, setError] = useState('');
@@ -166,6 +168,24 @@ export const PasswordModal: React.FC<PasswordModalProps> = ({
                   >
                     <span>Mở khóa</span>
                     <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  {/* Nút Đánh Trống Kiện Trời xin gợi ý pass */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playUiClick(soundEnabled);
+                      onClose();
+                      onOpenCocKienTroi?.(character);
+                    }}
+                    className={`w-full mt-2 py-2.5 px-3 rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                      isHellMode
+                        ? 'bg-red-950/60 hover:bg-red-900/80 text-red-200 border-red-800/60 font-bold text-xs'
+                        : 'bg-gradient-to-r from-amber-100 to-yellow-100 hover:from-amber-200 hover:to-yellow-200 text-amber-950 border-amber-300 font-black text-xs shadow-xs'
+                    }`}
+                  >
+                    <span className="text-base">🐸🥁</span>
+                    <span>Không biết pass? Đánh Trống Kiện Trời Xin Gợi Ý!</span>
                   </button>
                 </form>
               ) : (

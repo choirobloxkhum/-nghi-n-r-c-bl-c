@@ -11,6 +11,7 @@ interface RPTopNavBarProps {
   isHellMode?: boolean;
   onOpenAgeVerification?: () => void;
   onReturnToEarth?: () => void;
+  onOpenCocKienTroi?: () => void;
 }
 
 export const RPTopNavBar: React.FC<RPTopNavBarProps> = ({
@@ -19,6 +20,7 @@ export const RPTopNavBar: React.FC<RPTopNavBarProps> = ({
   isHellMode = false,
   onOpenAgeVerification,
   onReturnToEarth,
+  onOpenCocKienTroi,
 }) => {
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -131,27 +133,25 @@ export const RPTopNavBar: React.FC<RPTopNavBarProps> = ({
           </div>
         </div>
 
-        {/* Right Section: NSFW Toggle Button (Normal Mode) & Fullscreen Action */}
+        {/* Right Section: Cóc Kiện Trời (Icon Con Cóc) & Fullscreen Action */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* 
-          // HIDDEN FOR GITHUB PUBLISH (HELL MODE NOT READY)
-          {!isHellMode && (
+          {/* Nút Cóc Kiện Trời - Chỉ icon con cóc */}
+          {onOpenCocKienTroi && (
             <button
+              id="btn-coc-kien-troi-nav"
               onClick={() => {
                 playUiClick(soundEnabled);
-                onOpenAgeVerification?.();
+                onOpenCocKienTroi();
               }}
-              title="Kích hoạt chế độ Địa Ngục / NSFW Realm 18+"
-              className="group relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-r from-red-600 via-purple-600 to-amber-500 hover:from-red-500 hover:to-purple-500 text-white font-black text-[11px] sm:text-xs border-2 border-red-300/80 shadow-[0_0_20px_rgba(239,68,68,0.7)] transition-all cursor-pointer active:scale-95 animate-pulse"
+              title="Cóc Kiện Trời - Xin gợi ý pass từ Ngọc Hoàng 🐸"
+              aria-label="Cóc Kiện Trời - Xin gợi ý pass"
+              className="relative p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-amber-950 border-2 border-yellow-200 shadow-[0_4px_12px_rgba(245,158,11,0.45)] hover:shadow-[0_6px_18px_rgba(245,158,11,0.6)] flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 group"
             >
-              <Flame className="w-4 h-4 text-yellow-300 fill-red-500 group-hover:scale-110 transition-transform" />
-              <span className="font-extrabold tracking-wide uppercase">Địa Ngục 18+</span>
-              <span className="px-1.5 py-0.2 bg-black/40 rounded-full text-[9px] font-black border border-white/40">
-                NSFW
+              <span className="text-lg sm:text-2xl leading-none group-hover:scale-120 transition-transform">
+                🐸
               </span>
             </button>
-          )} 
-          */}
+          )}
 
           {/* Fullscreen Button */}
           <button

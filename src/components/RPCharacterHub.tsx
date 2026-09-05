@@ -17,6 +17,7 @@ import { AnnouncementBanner } from './AnnouncementBanner';
 import { NgocHoangCloudModal } from './NgocHoangCloudModal';
 import { RapunzelTributeFooter } from './RapunzelTributeFooter';
 import { PasswordModal } from './PasswordModal';
+import { CocKienTroiModal } from './CocKienTroiModal';
 import {
   getStoredRPCharacters,
   saveStoredRPCharacters,
@@ -69,6 +70,10 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
   // Password Modal states
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [selectedPasswordChar, setSelectedPasswordChar] = useState<RPCharacter | null>(null);
+
+  // Cóc Kiện Trời Modal states (Đánh trống xin gợi ý password)
+  const [isCocKienTroiOpen, setIsCocKienTroiOpen] = useState(false);
+  const [cocKienTroiCharId, setCocKienTroiCharId] = useState<string>('char-11-lucifer');
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -332,6 +337,15 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
     }
   };
 
+  // Open Cóc Kiện Trời Modal
+  const handleOpenCocKienTroi = (char?: RPCharacter) => {
+    playUiClick(soundEnabled);
+    if (char?.id) {
+      setCocKienTroiCharId(char.id);
+    }
+    setIsCocKienTroiOpen(true);
+  };
+
   // Select and scroll to character from Gacha
   const handleSelectFromGacha = (char: RPCharacter) => {
     setSearchQuery('');
@@ -381,6 +395,7 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
         isHellMode={isHellMode}
         onOpenAgeVerification={handleOpenAgeVerification}
         onReturnToEarth={handleReturnToEarth}
+        onOpenCocKienTroi={() => handleOpenCocKienTroi()}
       />
 
       {/* 2. MAIN CONTENT AREA */}
@@ -813,6 +828,21 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
         character={selectedPasswordChar}
         soundEnabled={soundEnabled}
         isHellMode={isHellMode}
+        onOpenCocKienTroi={handleOpenCocKienTroi}
+      />
+
+      {/* Cóc Kiện Trời: Đánh Trống Xin Gợi Ý Password */}
+      <CocKienTroiModal
+        isOpen={isCocKienTroiOpen}
+        onClose={() => setIsCocKienTroiOpen(false)}
+        characters={characters}
+        initialSelectedCharId={cocKienTroiCharId}
+        soundEnabled={soundEnabled}
+        onToggleSound={onToggleSound}
+        onOpenPasswordModal={(char) => {
+          setSelectedPasswordChar(char);
+          setIsPasswordModalOpen(true);
+        }}
       />
 
       {/* Floating Cloud Announcement Modal (Ngọc Hoàng in Normal Mode / Cursed Letter in Hell Mode) */}

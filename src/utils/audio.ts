@@ -857,5 +857,115 @@ export function playReturnToHeaven(enabled = true) {
   }
 }
 
+// 5. Cóc Kiện Trời - Trống Đăng Văn Kêu Oan (Punchy Resonant Ancient Drum Beat)
+export function playDrumBeatSound(enabled = true) {
+  if (!enabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Drum body low frequency thump
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    // Frequency drops from 180Hz to 45Hz (resonant drum membrane)
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.18);
+
+    gain.gain.setValueAtTime(0.65, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.36);
+
+    // Drum mallet snap/strike click
+    const clickOsc = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    clickOsc.type = 'triangle';
+    clickOsc.frequency.setValueAtTime(420, now);
+    clickOsc.frequency.exponentialRampToValueAtTime(80, now + 0.04);
+
+    clickGain.gain.setValueAtTime(0.35, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+    clickOsc.connect(clickGain);
+    clickGain.connect(ctx.destination);
+
+    clickOsc.start(now);
+    clickOsc.stop(now + 0.05);
+  } catch {
+    // Ignore
+  }
+}
+
+// 6. Cóc Kêu Oan (Playful Frog Croak)
+export function playFrogCroakSound(enabled = true) {
+  if (!enabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Low guttural pulse
+    const croaks = [0, 0.09];
+    croaks.forEach((delay) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now + delay);
+      osc.frequency.linearRampToValueAtTime(110, now + delay + 0.06);
+
+      gain.gain.setValueAtTime(0.18, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.07);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.08);
+    });
+  } catch {
+    // Ignore
+  }
+}
+
+// 7. Mở Khóa Gợi Ý / Mốc Thiên Đình (Celestial Fanfare)
+export function playMilestoneUnlockSound(enabled = true) {
+  if (!enabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const chords = [523.25, 659.25, 783.99, 1046.5]; // C E G C
+    chords.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+
+      gain.gain.setValueAtTime(0, now + idx * 0.06);
+      gain.gain.linearRampToValueAtTime(0.28, now + idx * 0.06 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.6);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + idx * 0.06);
+      osc.stop(now + idx * 0.06 + 0.65);
+    });
+  } catch {
+    // Ignore
+  }
+}
+
+
 
 
