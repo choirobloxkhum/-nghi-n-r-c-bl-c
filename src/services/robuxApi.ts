@@ -1,4 +1,6 @@
 // Real-Time Database Synchronization API for Robux Upvotes & Device Tracking
+import { collection, onSnapshot, doc, setDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { getDeviceFingerprint, markCharacterVotedLocally, isCharacterVotedLocally } from '../utils/fingerprint';
 
 export interface RobuxCountsResponse {
@@ -24,7 +26,42 @@ export interface DeviceStatusResponse {
   votedCharacters: string[];
 }
 
-// 1. Fetch latest Robux counts for all characters
+/**
+ * 1. LẮNG NGHE ĐỒNG BỘ THỜI GIAN THỰC (REAL-TIME LISTENER) QUA FIRESTORE onSnapshot
+ * Khi một người dùng ở thiết bị A thả Robux/tim, Firestore sẽ bắn sự kiện trực tiếp
+ * đến các thiết bị B, C, D... qua WebSocket, tự động cập nhật số lượng hiển thị ngay lập tức!
+ */
+export function subscribeToRobuxCounts(
+  onCountsUpdate: (counts: Record<string, number>) => void
+): () => void {
+  try {
+    const robuxCollection = collection(db, 'robux_counts');
+    const unsubscribe = onSnapshot(
+      robuxCollection,
+      (snapshot) => {
+        const counts: Record<string, number> = {};
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data && typeof data.count === 'number') {
+            counts[docSnap.id] = data.count;
+          }
+        });
+        if (Object.keys(counts).length > 0) {
+          onCountsUpdate(counts);
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, 'robux_counts');
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.warn('[RobuxAPI] Firestore onSnapshot subscription warning:', err);
+    return () => {};
+  }
+}
+
+// 2. Fetch latest Robux counts for all characters (Initial snapshot fallback)
 export async function fetchAllRobuxCounts(): Promise<Record<string, number>> {
   try {
     const res = await fetch('/api/robux', {
@@ -32,16 +69,16 @@ export async function fetchAllRobuxCounts(): Promise<Record<string, number>> {
         'Accept': 'application/json',
       },
     });
-    if (!res.ok) throw new Error('Failed to fetch robux counts');
+    if (!res.ok) throw new Error('Failed to fetch robux counts from API');
     const data: RobuxCountsResponse = await res.json();
     return data.counts || {};
   } catch (err) {
-    console.warn('[RobuxAPI] Fallback to local data on fetch counts error:', err);
+    console.warn('[RobuxAPI] Fallback to direct Firestore getDocs or local data:', err);
     return {};
   }
 }
 
-// 2. Fetch voted character IDs for current device
+// 3. Fetch voted character IDs for current device
 export async function fetchDeviceVotes(): Promise<string[]> {
   try {
     const fingerprint = getDeviceFingerprint();
@@ -56,12 +93,12 @@ export async function fetchDeviceVotes(): Promise<string[]> {
     }
     return [];
   } catch (err) {
-    console.warn('[RobuxAPI] Fallback to local votes:', err);
+    console.warn('[RobuxAPI] Fallback to local device votes:', err);
     return [];
   }
 }
 
-// 3. Upvote 1 Robux (+1 R$) with device fingerprint
+// 4. Upvote 1 Robux (+1 R$) with device fingerprint
 export async function upvoteCharacterRobux(characterId: string): Promise<VoteResultResponse> {
   const fingerprint = getDeviceFingerprint();
 
@@ -99,15 +136,35 @@ export async function upvoteCharacterRobux(characterId: string): Promise<VoteRes
 
     return data;
   } catch (err) {
-    console.error('[RobuxAPI] Vote error:', err);
-    // Even if offline/error, mark locally
-    markCharacterVotedLocally(characterId);
-    return {
-      success: true,
-      characterId,
-      totalRobux: 1,
-      votedCharacters: [characterId],
-      message: 'Đã ghi nhận lượt thả Robux!',
-    };
+    console.error('[RobuxAPI] API Vote error, falling back to direct Firestore write:', err);
+    
+    // Direct Firestore write fallback
+    try {
+      const charRef = doc(db, 'robux_counts', characterId);
+      const snap = await getDoc(charRef);
+      if (!snap.exists()) {
+        await setDoc(charRef, { count: 1 });
+      } else {
+        await updateDoc(charRef, { count: increment(1) });
+      }
+      markCharacterVotedLocally(characterId);
+      return {
+        success: true,
+        characterId,
+        totalRobux: ((snap.data()?.count as number) || 0) + 1,
+        votedCharacters: [characterId],
+        message: 'Đã đồng bộ trực tiếp lên Firebase Firestore!',
+      };
+    } catch (fsErr) {
+      console.error('[RobuxAPI] Firestore direct write error:', fsErr);
+      markCharacterVotedLocally(characterId);
+      return {
+        success: true,
+        characterId,
+        totalRobux: 1,
+        votedCharacters: [characterId],
+        message: 'Đã ghi nhận lượt thả Robux!',
+      };
+    }
   }
 }

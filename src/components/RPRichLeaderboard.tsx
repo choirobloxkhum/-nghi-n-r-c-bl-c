@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Clock, Flame, ChevronDown, Trophy, Star, Volume2, Skull } from 'lucide-react';
+import { Sparkles, Clock, Flame, ChevronDown, Trophy, Star, Volume2, Skull, RefreshCw, Zap } from 'lucide-react';
 import { RPCharacter } from '../types';
 import { useCharacterVoice } from '../utils/characterVoice';
 
@@ -11,11 +11,15 @@ interface RPRichLeaderboardProps {
   onReadPlot: (character: RPCharacter) => void;
   onDonateRobux: (characterId: string) => void;
   isHellMode?: boolean;
+  remainingHours?: number;
+  onRefreshLeaderboard?: () => void;
 }
 
 export const RPRichLeaderboard: React.FC<RPRichLeaderboardProps> = ({
   topCharacters,
   isHellMode = false,
+  remainingHours = 24,
+  onRefreshLeaderboard,
 }) => {
   const { playingId, playVoice, stopVoice } = useCharacterVoice();
 
@@ -228,25 +232,45 @@ export const RPRichLeaderboard: React.FC<RPRichLeaderboardProps> = ({
           </div>
         </div>
 
-        {/* Updated Timestamp Badge */}
-        <div
-          className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl text-white text-xs font-bold shadow-md border self-start sm:self-auto backdrop-blur-xs ${
-            isHellMode
-              ? 'bg-[#0a0416]/90 border-purple-700/80 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
-              : 'bg-slate-900/90 border-slate-700/80'
-          }`}
-        >
-          <div className="relative flex items-center justify-center w-2.5 h-2.5">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isHellMode ? 'bg-purple-400' : 'bg-emerald-400'}`} />
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${isHellMode ? 'bg-purple-400' : 'bg-emerald-400'}`} />
+        {/* Updated Timestamp Badge & Real-Time Sync Status */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <div
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl text-white text-xs font-bold shadow-md border backdrop-blur-xs ${
+              isHellMode
+                ? 'bg-[#0a0416]/90 border-purple-700/80 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                : 'bg-slate-900/90 border-slate-700/80'
+            }`}
+          >
+            <div className="relative flex items-center justify-center w-2.5 h-2.5">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isHellMode ? 'bg-purple-400' : 'bg-emerald-400'}`} />
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isHellMode ? 'bg-purple-400' : 'bg-emerald-400'}`} />
+            </div>
+            <span className="text-emerald-400 font-bold flex items-center gap-1">
+              <Zap className="w-3.5 h-3.5 fill-emerald-400" />
+              Real-time
+            </span>
+            <span className="text-slate-500">•</span>
+            <span className="text-slate-300 font-medium flex items-center gap-1">
+              <Clock className={`w-3.5 h-3.5 ${isHellMode ? 'text-purple-300' : 'text-amber-400'}`} />
+              Chốt vị trí: <span className="text-amber-300 font-bold">24h</span> (còn ~{remainingHours}h)
+            </span>
           </div>
-          <span className="text-slate-300 font-medium flex items-center gap-1">
-            <Clock className={`w-3.5 h-3.5 ${isHellMode ? 'text-purple-300' : 'text-amber-400'}`} />
-            Cập nhật:
-          </span>
-          <span className={`font-mono font-bold tracking-tight ${isHellMode ? 'text-amber-300' : 'text-amber-300'}`}>
-            {lastUpdated}
-          </span>
+
+          {onRefreshLeaderboard && (
+            <button
+              id="btn-refresh-leaderboard-order"
+              onClick={onRefreshLeaderboard}
+              title="Cập nhật lại thứ hạng Top 3 ngay lập tức"
+              className={`p-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                isHellMode
+                  ? 'bg-purple-950/80 hover:bg-purple-900 border-purple-700 text-purple-200'
+                  : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700'
+              }`}
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden sm:inline">Cập nhật hạng</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -25,7 +25,12 @@ import {
   fetchAllRobuxCounts,
   fetchDeviceVotes,
   upvoteCharacterRobux,
+  subscribeToRobuxCounts,
 } from '../services/robuxApi';
+import {
+  getLeaderboardSnapshot,
+  forceRefreshLeaderboardSnapshot,
+} from '../utils/leaderboardSnapshot';
 import {
   isCharacterVotedLocally,
   getLocalVotedCharactersList,
@@ -114,11 +119,33 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
     }
   }, []);
 
-  // Initial sync & Real-time interval polling every 3.5s
+  // Đồng bộ thời gian thực (Real-time Sync qua Firestore onSnapshot)
   useEffect(() => {
+    // 1. Initial snapshot data fetch
     syncServerData();
-    const interval = setInterval(syncServerData, 3500);
-    return () => clearInterval(interval);
+
+    // 2. Real-time Firestore snapshot listener: Nhận dữ liệu cập nhật tức thì từ Firestore
+    const unsubscribe = subscribeToRobuxCounts((newCounts) => {
+      setCharacters((prev) => {
+        let changed = false;
+        const updated = prev.map((char) => {
+          if (typeof newCounts[char.id] === 'number' && newCounts[char.id] !== char.robuxDonations) {
+            changed = true;
+            return { ...char, robuxDonations: newCounts[char.id] };
+          }
+          return char;
+        });
+        if (changed) {
+          saveStoredRPCharacters(updated);
+          return updated;
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [syncServerData]);
 
   // Handle Robux Donation with Anonymous Device Fingerprinting & Real-Time Sync
@@ -219,6 +246,39 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
     return [...activeModeCharacters].sort((a, b) => b.robuxDonations - a.robuxDonations);
   }, [activeModeCharacters]);
 
+  // 24-Hour Leaderboard Snapshot (Tự động cập nhật thứ hạng top 3 sau 24 tiếng để tránh lag nhảy vị trí)
+  const [leaderboardInfo, setLeaderboardInfo] = useState(() => {
+    const currentSortedIds = [...activeModeCharacters]
+      .sort((a, b) => b.robuxDonations - a.robuxDonations)
+      .map((c) => c.id);
+    return getLeaderboardSnapshot(currentSortedIds);
+  });
+
+  // Tự động kiểm tra chu kỳ 24 giờ khi số tim thay đổi
+  useEffect(() => {
+    const currentSortedIds = sortedByRobux.map((c) => c.id);
+    const snap = getLeaderboardSnapshot(currentSortedIds);
+    setLeaderboardInfo(snap);
+  }, [sortedByRobux]);
+
+  // Cho phép người dùng bấm nút cập nhật lại thứ hạng Top 3 ngay lập tức nếu muốn
+  const handleForceRefreshLeaderboard = () => {
+    playUiClick(soundEnabled);
+    const currentSortedIds = sortedByRobux.map((c) => c.id);
+    const snap = forceRefreshLeaderboardSnapshot(currentSortedIds);
+    setLeaderboardInfo(snap);
+  };
+
+  // Top 3 nhân vật cho Bảng Xếp Hạng theo vị trí chốt 24h (Số tim vẫn nhảy real-time từ Firestore)
+  const top3LeaderboardCharacters = useMemo(() => {
+    const map = new Map(activeModeCharacters.map((c) => [c.id, c]));
+    const list = leaderboardInfo.topIds.map((id) => map.get(id)).filter(Boolean) as RPCharacter[];
+    if (list.length < 3) {
+      return sortedByRobux.slice(0, 3);
+    }
+    return list;
+  }, [activeModeCharacters, leaderboardInfo.topIds, sortedByRobux]);
+
   // Filtered characters for "Các chồng" section
   const filteredCharacters = useMemo(() => {
     return activeModeCharacters.filter((char) => {
@@ -291,10 +351,10 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
     }, 150);
   };
 
-  // Calculate rank lookup map for quick badges
+  // Calculate rank lookup map for quick badges based on 24-hour leaderboard snapshot
   const rankMap = useMemo(() => {
     const map = new Map<string, { rank: number; label: string; color: string }>();
-    sortedByRobux.slice(0, 3).forEach((char, idx) => {
+    top3LeaderboardCharacters.forEach((char, idx) => {
       map.set(char.id, {
         rank: idx + 1,
         label: `Top ${idx + 1}`,
@@ -302,7 +362,7 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
       });
     });
     return map;
-  }, [sortedByRobux]);
+  }, [top3LeaderboardCharacters]);
 
   return (
     <div
@@ -425,12 +485,14 @@ export const RPCharacterHub: React.FC<RPCharacterHubProps> = ({
             className="rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-7 border sm:border-2 backdrop-blur-md shadow-md sm:shadow-xl mb-6 sm:mb-10 bg-white/85 border-white/80"
           >
             <RPRichLeaderboard
-              topCharacters={sortedByRobux}
+              topCharacters={top3LeaderboardCharacters}
               votedIds={votedIds}
               onPlay={handlePlay}
               onReadPlot={handleReadPlot}
               onDonateRobux={handleDonateRobux}
               isHellMode={false}
+              remainingHours={leaderboardInfo.remainingHours}
+              onRefreshLeaderboard={handleForceRefreshLeaderboard}
             />
           </div>
         )}
