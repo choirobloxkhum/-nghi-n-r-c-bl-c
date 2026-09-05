@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Dices, Play, BookOpen, RotateCcw, X, Flame, ChevronRight, Check, Heart, ExternalLink, Volume2 } from 'lucide-react';
+import { Sparkles, Dices, Play, BookOpen, RotateCcw, X, Flame, ChevronRight, Check, Heart, ExternalLink, Volume2, Lock } from 'lucide-react';
 import { RPCharacter } from '../types';
 import { playGachaSpinTick, playGachaRevealFanfare, playUiClick } from '../utils/audio';
 import { useCharacterVoice } from '../utils/characterVoice';
@@ -278,8 +278,14 @@ export const GachaModal: React.FC<GachaModalProps> = ({
                   isSpinning ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                <Play className="w-3.5 h-3.5 fill-white stroke-none" />
-                <span>Chơi</span>
+                {(selectedChar || currentDisplay)?.id === 'char-11-lucifer' || (selectedChar || currentDisplay)?.password ? (
+                  <Lock className="w-4 h-4 stroke-[2.5]" />
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-white stroke-none" />
+                    <span>Chơi</span>
+                  </>
+                )}
               </button>
 
               <button

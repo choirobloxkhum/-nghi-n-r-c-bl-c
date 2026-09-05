@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, BookOpen, MessageSquare, Sparkles, Play, ShieldAlert, Heart, Tag } from 'lucide-react';
+import { X, BookOpen, MessageSquare, Sparkles, Play, ShieldAlert, Heart, Tag, Lock } from 'lucide-react';
 import { RPCharacter } from '../types';
 
 interface RPPlotModalProps {
@@ -199,8 +199,17 @@ export const RPPlotModal: React.FC<RPPlotModalProps> = ({
               }}
               className="px-6 py-2.5 rounded-xl bg-gradient-to-b from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] border-t border-white/40 border-b-2 border-[#15803d] text-white font-extrabold text-sm shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Play className="w-4 h-4 fill-white stroke-none" />
-              <span>Chơi Ngay Với {character.name}</span>
+              {character.id === 'char-11-lucifer' || character.password ? (
+                <>
+                  <Lock className="w-4 h-4 stroke-[2.5]" />
+                  <span>Mở Khóa Để Chơi</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 fill-white stroke-none" />
+                  <span>Chơi Ngay Với {character.name}</span>
+                </>
+              )}
             </button>
           </div>
         </div>

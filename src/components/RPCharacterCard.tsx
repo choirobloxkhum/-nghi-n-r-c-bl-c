@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, BookOpen, Sparkles, Crown, Check, Volume2, Flame } from 'lucide-react';
+import { Play, BookOpen, Sparkles, Crown, Check, Volume2, Flame, Lock } from 'lucide-react';
 import { RPCharacter } from '../types';
 import { useCharacterVoice } from '../utils/characterVoice';
 
@@ -32,6 +32,7 @@ export const RPCharacterCard: React.FC<RPCharacterCardProps> = ({
   const { playingId, playVoice, stopVoice } = useCharacterVoice();
 
   const isSpeaking = playingId === character.id;
+  const isLuciferLocked = character.id === 'char-11-lucifer' || character.name.toLowerCase().includes('lucifer') || Boolean(character.password);
 
   const handleImageClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -258,18 +259,26 @@ export const RPCharacterCard: React.FC<RPCharacterCardProps> = ({
       </div>
 
       {/* 3. ACTION BUTTONS:
-          - Hell Mode: Single full-width '"Chơi"' button
-          - Normal Mode: "Chơi" on top, then "Đọc plot" + "Robux" in bottom row
+          - Hell Mode: Single full-width '"Chơi"' button (or Lock icon for Lucifer)
+          - Normal Mode: "Chơi" (or Lock icon for Lucifer) on top, then "Đọc plot" + "Robux" in bottom row
       */}
       {isHellMode ? (
         <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-3 border-t border-red-900/50 flex">
           {/* Play Button in Hell Mode */}
           <button
             onClick={() => onPlay(character)}
+            title={isLuciferLocked ? 'Nhập mật khẩu để mở khóa' : '"Chơi"'}
+            aria-label={isLuciferLocked ? 'Mật khẩu' : '"Chơi"'}
             className="w-full py-2 sm:py-2.5 px-2 rounded-xl text-white font-extrabold text-sm sm:text-base shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer bg-gradient-to-b from-[#dc2626] via-[#991b1b] to-[#7f1d1d] hover:from-[#ef4444] hover:to-[#991b1b] border-t border-red-300/50 border-b-2 border-[#450a0a] shadow-red-950"
           >
-            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white stroke-none" />
-            <span>"Chơi"</span>
+            {isLuciferLocked ? (
+              <Lock className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white stroke-none" />
+                <span>"Chơi"</span>
+              </>
+            )}
           </button>
         </div>
       ) : (
@@ -277,10 +286,18 @@ export const RPCharacterCard: React.FC<RPCharacterCardProps> = ({
           {/* Play Button in Normal Mode (no quotes) */}
           <button
             onClick={() => onPlay(character)}
+            title={isLuciferLocked ? 'Nhập mật khẩu để mở khóa' : 'Chơi'}
+            aria-label={isLuciferLocked ? 'Mật khẩu' : 'Chơi'}
             className="w-full py-1.5 sm:py-2.5 px-2 rounded-xl text-white font-extrabold text-xs sm:text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer bg-gradient-to-b from-[#22c55e] to-[#16a34a] hover:from-[#4ade80] hover:to-[#22c55e] border-t border-white/40 border-b-2 border-[#15803d] hover:shadow-green-500/20"
           >
-            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white stroke-none" />
-            <span>Chơi</span>
+            {isLuciferLocked ? (
+              <Lock className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.5]" />
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white stroke-none" />
+                <span>Chơi</span>
+              </>
+            )}
           </button>
 
           {/* Bottom row in Normal Mode: "Đọc plot" + "Robux" */}
